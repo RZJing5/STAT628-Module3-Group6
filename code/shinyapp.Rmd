@@ -1,0 +1,144 @@
+---
+title: "Untitled"
+author: "Baiheng Chen"
+date: "2023-11-27"
+output: html_document
+---
+
+```{r}
+library(shinydashboard)
+library(shiny)
+
+```
+
+```{r}
+ui <- fluidPage(
+    titlePanel("Yelp 数据分析"),
+    sidebarLayout(
+        sidebarPanel(
+            h3("App介绍"),
+            p("这个app分析了费城意大利餐厅的经营情况。"),
+            p("联系人：cbh, jrz, zzy"),
+
+            h3("筛选条件"),
+            checkboxGroupInput("price", "价格", choices = c("High" = "high", "Low" = "low")),
+            checkboxGroupInput("location", "位置", choices = c("High" = "high", "Low" = "low"))
+        ),
+        mainPanel(
+            h3("分析结果"),
+            img(src = "1.jpg", id = "resultImage")
+        )
+    )
+)
+
+```
+
+
+
+```{r}
+server <- function(input, output) {
+    observe({
+        price_selection <- paste(input$price, collapse = "_")
+        location_selection <- paste(input$location, collapse = "_")
+        
+        # 根据选择的组合更新图片
+        # 这里只是一个基本的逻辑框架，你需要根据实际的图片和命名进行调整
+        img_name <- paste(price_selection, location_selection, "img.png", sep = "_")
+        output$resultImage <- renderImage({
+            list(src = img_name)
+        }, deleteFile = FALSE)
+    })
+}
+
+```
+
+
+
+
+```{r}
+shinyApp(ui = ui, server = server)
+
+```
+
+
+### multi
+```{r}
+library(shiny)
+library(shinydashboard)
+
+# 定义UI
+ui <- dashboardPage(
+    dashboardHeader(title = "Yelp analysis for Italian restaurants in Philadelphia"),
+    dashboardSidebar(
+        sidebarMenu(
+            menuItem("Home", tabName = "home", icon = icon("home")),
+            menuItem("Analysis", tabName = "analysis", icon = icon("table")),
+            menuItem("Food", tabName = "cusine", icon = icon("Food"))
+        )
+    ),
+    dashboardBody(
+        tabItems(
+
+            tabItem(tabName = "home",
+                h2("Introduction"),
+                p("The app uses yelp data to analyze Italian restaurants in Philadelphia, and restaurant operators can use the app to seek recommendations to improve their restaurant performance"),
+                p("Contact information:"),
+                p("Please reach out to any of our group member if there is any question:"),
+                p("Baiheng Chen: bchen342@wisc.edu"),
+                p("Ruizhen Jing: rjing5@wisc.edu"),
+                p("Ziang Zeng:zeng86@wisc.edu")
+                
+            ),
+            # 数据分析页面内容
+            tabItem(tabName = "analysis",
+                h2("Check your bussiness information:"),
+                img(src = "1.jpg", height = "100px", width = "auto"), 
+                checkboxGroupInput("price", "price", choices = c("High" = "high", "Low" = "low")),
+                checkboxGroupInput("location", "location", choices = c("downtown" = "center", "other" = "not")),
+                h2("Basic information"),
+                div(id = "content")
+                # img(src = "1.png", id = "resultImage")
+            ),
+            tabItem(tabName = "cusine",
+                h2("Food metioned")
+            )
+        )
+    )
+)
+
+# 定义服务器逻辑
+# 定义服务器逻辑
+server <- function(input, output, session) {
+    
+    # 根据选择的组合显示不同的内容
+    observe({
+        # 生成用于选择的组合字符串
+        selected_price <- ifelse("high" %in% input$price, "high", "low")
+        selected_location <- ifelse("center" %in% input$location, "center", "not")
+        
+        # 根据选择确定图片和文字
+        content <- switch(
+            paste(selected_price, selected_location),
+            "high_center" = list(img(src = "1.jpg"), "高价位，市中心"),
+            "high_not" = list(img(src = "1.jpg"), "高价位，市区以外"),
+            "low_center" = list(img(src = "1.jpg"), "低价位，市中心"),
+            "low_not" = list(img(src = "1.jpg"), "低价位，市区以外")
+            # list(img(src = "placeholder.png"), "请选择价格和位置")
+        )
+        
+        # 更新UI
+        output$content <- renderUI({
+            fluidRow(
+                column(6, content[[1]]),
+                column(6, p(content[[2]]))
+            )
+        })
+    })
+}
+
+# 运行应用
+shinyApp(ui, server)
+
+```
+
+
