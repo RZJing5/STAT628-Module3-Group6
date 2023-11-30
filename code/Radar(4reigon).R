@@ -30,7 +30,7 @@ radarchart(
   cglcol = "grey",
   cglty = 1,
   axislabcol = "grey",
-  caxislabels = c("0%", "20%", "40%", "60%", "80%"),
+  caxislabels = c("0%", "25%", "50%", "75", "100%"),
   cglwd = 0.8,
   vlcex = 0.8,
   title = "Radar map of high and low stars"
