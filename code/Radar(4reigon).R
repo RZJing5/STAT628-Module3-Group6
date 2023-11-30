@@ -33,12 +33,12 @@ radarchart(
   caxislabels = c("0%", "25%", "50%", "75", "100%"),
   cglwd = 0.8,
   vlcex = 0.8,
-  title = "Radar map of high and low stars"
+  title = "Comparison of the four types of Italian restaurant"
 )
 
 legend(
   "topright",
-  legend = c("PA_ch", "PA_cl", "PA_nh", "PA_nl"),
+  legend = c("Center and High Price", "Center and Low Price", "Off-Center and High Price", "Off-Center and Low Price"),
   fill = rainbow(4),
   bty = "n",
   cex = 0.8
