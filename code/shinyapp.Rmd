@@ -167,7 +167,7 @@ ui <- dashboardPage(
   plotOutput("barPlot")
 ),
             tabItem(tabName = "cuisine",
-                h2("Food Mentioned"),
+                h2("Different types of Italian restaurants"),
                 sidebarLayout(
                 sidebarPanel(
                   radioButtons("price", "Price", choices = c("High" = "high", "Low" = "low")),
@@ -178,9 +178,48 @@ ui <- dashboardPage(
                   fluidRow(
                     column(12, plotOutput("radarChart")) # 雷达图输出，占满整行
                   ),
+                  h3("According to the analysis of indicators"),
+                  conditionalPanel(
+                    condition = "input.price == 'high' && input.location == 'center'",
+                    h4("We evaluated each category of restaurant based on the five indicators and compared the high and low scores. This helped us identify the key factors for success for each category. For high-priced downtown Italian restaurants, customers value environment, service, and Price & Value. High-rated restaurants have better environment than low-rated ones, while low-rated restaurants have more complaints about Price & Value. High-priced restaurants need to provide an excellent dining ambiance to earn customers’ praise. A poor dining experience can make customers feel that the restaurant is not worth the money.")
+                  ),
+                  conditionalPanel(
+                    condition = "input.price == 'low' && input.location == 'center'",
+                    h4("We evaluated each category of restaurant based on the five indicators and compared the high and low scores. This helped us identify the key factors for success for each category. For low-priced downtown Italian restaurants, customers care about Service, Environment, and Price & Value, but only environment differs significantly between high and low ratings. These restaurants can boost their ratings by enhancing their dining ambiance, while keeping their service and Price & Value at the same level.")
+                  ),
+                  conditionalPanel(
+                    condition = "input.price == 'low' && input.location == 'not'",
+                    h4("We evaluated each category of restaurant based on the five indicators and compared the high and low scores. This helped us identify the key factors for success for each category. For low-priced Italian restaurants outside the city center, the main factors that distinguish high and low scores are environment and Price & Value. These restaurants can increase their star ratings by offering better value for money and enhancing their ambiance.")
+                  ),
+                  conditionalPanel(
+                    condition = "input.price == 'high' && input.location == 'not'",
+                    h4("We evaluated each category of restaurant based on the five indicators and compared the high and low scores. This helped us identify the key factors for success for each category. For high-priced Italian restaurants outside the city center, Environment and Service are the key factors that affect the ratings. High-rated restaurants have much better environment and service than low-rated ones. However, customers care less about Price & Value for high-rated restaurants than low-rated ones, which suggests that when the dining experience is bad, they will criticize the value of the expensive restaurant.")
+                  ),
                   fluidRow(
                     column(12, plotOutput("meanVarPlot")) # 均值和标准差图输出，占满整行
+                  ),
+                  h3("According to the analysis of foods"),
+                  conditionalPanel(
+                    condition = "input.price == 'high' && input.location == 'center'",
+                    h4("Food quality is a vital factor for a restaurant’s success. We identified the most frequently mentioned dishes in the reviews, such as Pizza, Cheese, Dessert, Chicken, Salad, Pasta, Wine, Soup, Seafood and Beef. We analyzed how these dishes influenced the ratings of the four types of restaurants and plotted a line chart. The x-axis of the chart shows the dish name, the y-axis shows the rating, the position of the dot for each dish shows the average rating of the reviews that mention the dish, and the size of the dot shows the rating variance of the reviews that mention the dish. Generally, we assume that a dish with a higher average rating helps a restaurant improve its overall rating, and a dish with a lower rating variance reduces the risk of a restaurant disappointing its customers.
+                       For high-priced downtown Italian restaurants, cheese and wine are effective choices to enhance the restaurant ratings, as they are often praised by the customers. However, beef and soup have a large variation in quality among different restaurants, and they may even be the worst dishes in some cases.")
+                  ),
+                  conditionalPanel(
+                    condition = "input.price == 'low' && input.location == 'center'",
+                    h4("Food quality is a vital factor for a restaurant’s success. We identified the most frequently mentioned dishes in the reviews, such as Pizza, Cheese, Dessert, Chicken, Salad, Pasta, Wine, Soup, Seafood and Beef. We analyzed how these dishes influenced the ratings of the four types of restaurants and plotted a line chart. The x-axis of the chart shows the dish name, the y-axis shows the rating, the position of the dot for each dish shows the average rating of the reviews that mention the dish, and the size of the dot shows the rating variance of the reviews that mention the dish. Generally, we assume that a dish with a higher average rating helps a restaurant improve its overall rating, and a dish with a lower rating variance reduces the risk of a restaurant disappointing its customers.
+                       For cheap Italian restaurants downtown, dessert is one of the most adventurous dishes. Seafood, although not as frequently ordered as dessert, is generally well-received by the customers. Soup, however, is the least favored dish, hard to prepare well, and often gets lower ratings than other dishes.")
+                  ),
+                  conditionalPanel(
+                    condition = "input.price == 'low' && input.location == 'not'",
+                    h4("Food quality is a vital factor for a restaurant’s success. We identified the most frequently mentioned dishes in the reviews, such as Pizza, Cheese, Dessert, Chicken, Salad, Pasta, Wine, Soup, Seafood and Beef. We analyzed how these dishes influenced the ratings of the four types of restaurants and plotted a line chart. The x-axis of the chart shows the dish name, the y-axis shows the rating, the position of the dot for each dish shows the average rating of the reviews that mention the dish, and the size of the dot shows the rating variance of the reviews that mention the dish. Generally, we assume that a dish with a higher average rating helps a restaurant improve its overall rating, and a dish with a lower rating variance reduces the risk of a restaurant disappointing its customers.
+                       For low-priced Italian restaurants outside the city center, seafood is the most favored dish, and desserts and wine are also great choices for the restaurants. Cheese and salad, however, are less appealing to the customers, and they are challenging for the restaurants to prepare well.")
+                  ),
+                  conditionalPanel(
+                    condition = "input.price == 'high' && input.location == 'not'",
+                    h4("Food quality is a vital factor for a restaurant’s success. We identified the most frequently mentioned dishes in the reviews, such as Pizza, Cheese, Dessert, Chicken, Salad, Pasta, Wine, Soup, Seafood and Beef. We analyzed how these dishes influenced the ratings of the four types of restaurants and plotted a line chart. The x-axis of the chart shows the dish name, the y-axis shows the rating, the position of the dot for each dish shows the average rating of the reviews that mention the dish, and the size of the dot shows the rating variance of the reviews that mention the dish. Generally, we assume that a dish with a higher average rating helps a restaurant improve its overall rating, and a dish with a lower rating variance reduces the risk of a restaurant disappointing its customers.
+                       For high-priced Italian restaurants outside the city center, pasta and pizza are low-risk choices that can boost the restaurant ratings, as they are usually well-reviewed by the customers. Soup and beef, on the other hand, are high-risk dishes that can lower the ratings, as they are often criticized by the customers.")
                   )
+                  
                 )
               )
             )
