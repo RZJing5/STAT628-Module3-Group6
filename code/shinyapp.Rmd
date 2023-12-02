@@ -110,6 +110,26 @@ createRadarChart <- function(dataset) {
     cex = 0.8
   )
 }
+
+generateBarPlot <- function(data, variable) {
+  variable <- enquo(variable)  # Enquoting the variable
+  
+  # Group by the specified variable and calculate average stars
+  plot_data <- data %>%
+    group_by(!!variable) %>%
+    filter((!(!!variable==""))&(!is.na(!!variable))&(!(!!variable=="None"))) %>%
+    summarise(avg_star = mean(stars), .groups = "drop")
+  
+  # Create the bar plot
+  plot <- ggplot(plot_data, aes(x = !!variable, y = avg_star)) +
+    geom_bar(stat = "identity", fill = "skyblue", color = "black", alpha = 0.9) +
+    labs(x = glue("{rlang::quo_name(variable)} Category"), y = "Average Stars") +
+    geom_text(aes(label = sprintf("%.2f", avg_star)), vjust = -0.5, size = 3) +
+    ggtitle(glue("Average Stars by {rlang::quo_name(variable)} Category")) +
+    diytheme
+  
+  return(plot)
+}
 ```
 
 ############################3
@@ -141,13 +161,11 @@ ui <- dashboardPage(
                 p("Ruizhen Jing: rjing5@wisc.edu"),
                 p("Ziang Zeng: zeng86@wisc.edu")
             ),
-            tabItem(tabName = "analysis",
-                h2("Check Your Business Information:"),
-                checkboxGroupInput("price", "Price", choices = c("High" = "high", "Low" = "low")),
-                checkboxGroupInput("location", "Location", choices = c("Downtown" = "center", "Other" = "not")),
-                h2("Basic Information"),
-                uiOutput("content")
-            ),
+            tabItem(tabName = "barPlot",
+  h2("Bar Plot"),
+  selectInput("barPlotVariable", "Select Variable", choices = c("OutdoorSeating", "WiFi", "RestaurantsAttire","Alcohol","NoiseLevel","RestaurantsDelivery","GoodForKids"), selected = "OutdoorSeating"),
+  plotOutput("barPlot")
+),
             tabItem(tabName = "cuisine",
                 h2("Food Mentioned"),
                 sidebarLayout(
@@ -166,6 +184,9 @@ ui <- dashboardPage(
                 )
               )
             )
+            
+            
+            
         )
     )
 )
@@ -193,6 +214,8 @@ server <- function(input, output, session) {
     )
   })
   
+  joined_data <- read.csv("https://raw.githubusercontent.com/RZJing5/STAT628-Module3-Group6/main/data/attr_data.csv")
+  
   # 生成雷达图输出
   output$radarChart <- renderPlot({
     data <- req(selectedDataForRadar())
@@ -203,6 +226,12 @@ server <- function(input, output, session) {
   output$meanVarPlot <- renderPlot({
     data <- req(selectedDataForMeanVar())
     calculateMeanVarPlot(data)
+  })
+  
+  # Render the bar plot
+  output$barPlot <- renderPlot({
+    variable <- as.name(input$barPlotVariable)
+    generateBarPlot(joined_data, variable)
   })
 }
 
