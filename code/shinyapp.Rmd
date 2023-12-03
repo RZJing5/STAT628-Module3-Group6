@@ -12,6 +12,20 @@ library(DT)
 library(fmsb)
 library(ggplot2)
 library(dplyr)
+diytheme <- theme(plot.title=element_text(face="bold.italic",
+                                          size="14", color="brown"),
+                  axis.title=element_text(face="bold.italic",
+                                          size=10, color="brown"),
+                  axis.text=element_text(face="bold", size=9,
+                                         color="darkblue"),
+                  panel.background=element_rect(fill="white",
+                                                color="darkblue"),
+                  panel.grid.major.y=element_line(color="grey",
+                                                  linetype=1),
+                  panel.grid.minor.y=element_line(color="grey",
+                                                  linetype=2),
+                  panel.grid.minor.x=element_blank(),
+                  legend.position="top") 
 
 ```
 
@@ -111,30 +125,41 @@ createRadarChart <- function(dataset) {
   )
 }
 
-generateBarPlot <- function(data, variable) {
-  variable <- enquo(variable)  # Enquoting the variable
-  
-  # Group by the specified variable and calculate average stars
-  plot_data <- data %>%
-    group_by(!!variable) %>%
-    filter((!(!!variable==""))&(!is.na(!!variable))&(!(!!variable=="None"))) %>%
-    summarise(avg_star = mean(stars), .groups = "drop")
-  
-  # Create the bar plot
-  plot <- ggplot(plot_data, aes(x = !!variable, y = avg_star)) +
-    geom_bar(stat = "identity", fill = "skyblue", color = "black", alpha = 0.9) +
-    labs(x = glue("{rlang::quo_name(variable)} Category"), y = "Average Stars") +
-    geom_text(aes(label = sprintf("%.2f", avg_star)), vjust = -0.5, size = 3) +
-    ggtitle(glue("Average Stars by {rlang::quo_name(variable)} Category")) +
-    diytheme
-  
-  return(plot)
-}
+
 ```
 
 ############################3
 # dierdai
 
+
+
+
+```{r}
+generateBarPlot <- function(data, variable) {
+  # 将字符串变量转换为符号
+  variable_sym <- rlang::sym(variable)
+  
+  # 使用符号进行分组和汇总
+  plot_data <- data %>%
+    group_by(!!variable_sym) %>%
+    filter((!!variable_sym != "") & (!is.na(!!variable_sym)) & (!!variable_sym != "None")) %>%
+    summarise(avg_star = mean(star, na.rm = TRUE), .groups = "drop")
+
+  # 打印 plot_data 来调试
+  #print(plot_data)
+  
+  # 创建条形图
+  plot <- ggplot(plot_data, aes_string(x = variable, y = "avg_star")) +
+    geom_col(fill = "skyblue", color = "black", alpha = 0.9) +
+    geom_text(aes(label = sprintf("%.2f", avg_star)), vjust = -0.5, size = 5) +
+    labs(x = paste(variable, "Category"), y = "Average Stars") +
+    ggtitle(paste("Average Stars by", variable, "Category")) +
+    diytheme
+  
+  return(plot)
+}
+
+```
 
 ##############################
 ```{r}
@@ -146,8 +171,8 @@ ui <- dashboardPage(
     dashboardSidebar(
         sidebarMenu(
             menuItem("Home", tabName = "home", icon = icon("home")),
-            menuItem("Analysis", tabName = "analysis", icon = icon("table")),
-            menuItem("Cuisine", tabName = "cuisine", icon = icon("cutlery"))
+            menuItem("Atrribute visualize", tabName = "barPlot", icon = icon("table")),
+            menuItem("Suggestions and plots", tabName = "cuisine", icon = icon("cutlery"))
         )
     ),
     dashboardBody(
@@ -164,10 +189,11 @@ ui <- dashboardPage(
             tabItem(tabName = "barPlot",
   h2("Bar Plot"),
   selectInput("barPlotVariable", "Select Variable", choices = c("OutdoorSeating", "WiFi", "RestaurantsAttire","Alcohol","NoiseLevel","RestaurantsDelivery","GoodForKids"), selected = "OutdoorSeating"),
-  plotOutput("barPlot")
+  plotOutput("barPlot"),
+  verbatimTextOutput("selectedDescription")
 ),
             tabItem(tabName = "cuisine",
-                h2("Food Mentioned"),
+                h2("Different types of Italian restaurants"),
                 sidebarLayout(
                 sidebarPanel(
                   radioButtons("price", "Price", choices = c("High" = "high", "Low" = "low")),
@@ -178,9 +204,48 @@ ui <- dashboardPage(
                   fluidRow(
                     column(12, plotOutput("radarChart")) # 雷达图输出，占满整行
                   ),
+                  h3("According to the analysis of indicators"),
+                  conditionalPanel(
+                    condition = "input.price == 'high' && input.location == 'center'",
+                    h4("We evaluated each category of restaurant based on the five indicators and compared the high and low scores. This helped us identify the key factors for success for each category. For high-priced downtown Italian restaurants, customers value environment, service, and Price & Value. High-rated restaurants have better environment than low-rated ones, while low-rated restaurants have more complaints about Price & Value. High-priced restaurants need to provide an excellent dining ambiance to earn customers’ praise. A poor dining experience can make customers feel that the restaurant is not worth the money.")
+                  ),
+                  conditionalPanel(
+                    condition = "input.price == 'low' && input.location == 'center'",
+                    h4("We evaluated each category of restaurant based on the five indicators and compared the high and low scores. This helped us identify the key factors for success for each category. For low-priced downtown Italian restaurants, customers care about Service, Environment, and Price & Value, but only environment differs significantly between high and low ratings. These restaurants can boost their ratings by enhancing their dining ambiance, while keeping their service and Price & Value at the same level.")
+                  ),
+                  conditionalPanel(
+                    condition = "input.price == 'low' && input.location == 'not'",
+                    h4("We evaluated each category of restaurant based on the five indicators and compared the high and low scores. This helped us identify the key factors for success for each category. For low-priced Italian restaurants outside the city center, the main factors that distinguish high and low scores are environment and Price & Value. These restaurants can increase their star ratings by offering better value for money and enhancing their ambiance.")
+                  ),
+                  conditionalPanel(
+                    condition = "input.price == 'high' && input.location == 'not'",
+                    h4("We evaluated each category of restaurant based on the five indicators and compared the high and low scores. This helped us identify the key factors for success for each category. For high-priced Italian restaurants outside the city center, Environment and Service are the key factors that affect the ratings. High-rated restaurants have much better environment and service than low-rated ones. However, customers care less about Price & Value for high-rated restaurants than low-rated ones, which suggests that when the dining experience is bad, they will criticize the value of the expensive restaurant.")
+                  ),
                   fluidRow(
                     column(12, plotOutput("meanVarPlot")) # 均值和标准差图输出，占满整行
+                  ),
+                  h3("According to the analysis of foods"),
+                  conditionalPanel(
+                    condition = "input.price == 'high' && input.location == 'center'",
+                    h4("Food quality is a vital factor for a restaurant’s success. We identified the most frequently mentioned dishes in the reviews, such as Pizza, Cheese, Dessert, Chicken, Salad, Pasta, Wine, Soup, Seafood and Beef. We analyzed how these dishes influenced the ratings of the four types of restaurants and plotted a line chart. The x-axis of the chart shows the dish name, the y-axis shows the rating, the position of the dot for each dish shows the average rating of the reviews that mention the dish, and the size of the dot shows the rating variance of the reviews that mention the dish. Generally, we assume that a dish with a higher average rating helps a restaurant improve its overall rating, and a dish with a lower rating variance reduces the risk of a restaurant disappointing its customers.
+                       For high-priced downtown Italian restaurants, cheese and wine are effective choices to enhance the restaurant ratings, as they are often praised by the customers. However, beef and soup have a large variation in quality among different restaurants, and they may even be the worst dishes in some cases.")
+                  ),
+                  conditionalPanel(
+                    condition = "input.price == 'low' && input.location == 'center'",
+                    h4("Food quality is a vital factor for a restaurant’s success. We identified the most frequently mentioned dishes in the reviews, such as Pizza, Cheese, Dessert, Chicken, Salad, Pasta, Wine, Soup, Seafood and Beef. We analyzed how these dishes influenced the ratings of the four types of restaurants and plotted a line chart. The x-axis of the chart shows the dish name, the y-axis shows the rating, the position of the dot for each dish shows the average rating of the reviews that mention the dish, and the size of the dot shows the rating variance of the reviews that mention the dish. Generally, we assume that a dish with a higher average rating helps a restaurant improve its overall rating, and a dish with a lower rating variance reduces the risk of a restaurant disappointing its customers.
+                       For cheap Italian restaurants downtown, dessert is one of the most adventurous dishes. Seafood, although not as frequently ordered as dessert, is generally well-received by the customers. Soup, however, is the least favored dish, hard to prepare well, and often gets lower ratings than other dishes.")
+                  ),
+                  conditionalPanel(
+                    condition = "input.price == 'low' && input.location == 'not'",
+                    h4("Food quality is a vital factor for a restaurant’s success. We identified the most frequently mentioned dishes in the reviews, such as Pizza, Cheese, Dessert, Chicken, Salad, Pasta, Wine, Soup, Seafood and Beef. We analyzed how these dishes influenced the ratings of the four types of restaurants and plotted a line chart. The x-axis of the chart shows the dish name, the y-axis shows the rating, the position of the dot for each dish shows the average rating of the reviews that mention the dish, and the size of the dot shows the rating variance of the reviews that mention the dish. Generally, we assume that a dish with a higher average rating helps a restaurant improve its overall rating, and a dish with a lower rating variance reduces the risk of a restaurant disappointing its customers.
+                       For low-priced Italian restaurants outside the city center, seafood is the most favored dish, and desserts and wine are also great choices for the restaurants. Cheese and salad, however, are less appealing to the customers, and they are challenging for the restaurants to prepare well.")
+                  ),
+                  conditionalPanel(
+                    condition = "input.price == 'high' && input.location == 'not'",
+                    h4("Food quality is a vital factor for a restaurant’s success. We identified the most frequently mentioned dishes in the reviews, such as Pizza, Cheese, Dessert, Chicken, Salad, Pasta, Wine, Soup, Seafood and Beef. We analyzed how these dishes influenced the ratings of the four types of restaurants and plotted a line chart. The x-axis of the chart shows the dish name, the y-axis shows the rating, the position of the dot for each dish shows the average rating of the reviews that mention the dish, and the size of the dot shows the rating variance of the reviews that mention the dish. Generally, we assume that a dish with a higher average rating helps a restaurant improve its overall rating, and a dish with a lower rating variance reduces the risk of a restaurant disappointing its customers.
+                       For high-priced Italian restaurants outside the city center, pasta and pizza are low-risk choices that can boost the restaurant ratings, as they are usually well-reviewed by the customers. Soup and beef, on the other hand, are high-risk dishes that can lower the ratings, as they are often criticized by the customers.")
                   )
+                  
                 )
               )
             )
@@ -214,8 +279,8 @@ server <- function(input, output, session) {
     )
   })
   
-  joined_data <- read.csv("https://raw.githubusercontent.com/RZJing5/STAT628-Module3-Group6/main/data/attr_data.csv")
   
+  #print(head(joined_data()))
   # 生成雷达图输出
   output$radarChart <- renderPlot({
     data <- req(selectedDataForRadar())
@@ -228,10 +293,39 @@ server <- function(input, output, session) {
     calculateMeanVarPlot(data)
   })
   
-  # Render the bar plot
-  output$barPlot <- renderPlot({
-    variable <- as.name(input$barPlotVariable)
-    generateBarPlot(joined_data, variable)
+  joined_data <- reactive({
+    read.csv("https://raw.githubusercontent.com/RZJing5/STAT628-Module3-Group6/main/data/attr_data.csv")
+  })
+  observe({
+    print(head(joined_data()))
+  })
+  # joined_data <- read.csv("https://raw.githubusercontent.com/RZJing5/STAT628-Module3-Group6/main/data/attr_data.csv")
+  # 
+  # # 打印数据的前几行
+  # print(head(joined_data))
+  # 确保使用 renderPlot 在 Shiny 中绘制图表
+output$barPlot <- renderPlot({
+  req(input$barPlotVariable)
+  data <- req(joined_data())
+  generateBarPlot(data, input$barPlotVariable)
+})
+ 
+  
+  output$selectedDescription <- renderText({
+    descriptions <- list(
+      OutdoorSeating = "This variable represents outdoor seating.",
+      WiFi = "This variable represents the availability of WiFi.",
+      RestaurantsAttire = "This variable represents the attire required in restaurants.",
+      Alcohol = "This variable represents the availability of alcohol.",
+      NoiseLevel = "This variable represents the noise level in restaurants.",
+      RestaurantsDelivery = "This variable represents the delivery service.",
+      GoodForKids = "This variable represents whether the restaurant is good for kids."
+    )
+    
+    selected_variable <- input$barPlotVariable
+    selected_description <- descriptions[[selected_variable]]
+    
+    paste("Selected Description: ", selected_description)
   })
 }
 
