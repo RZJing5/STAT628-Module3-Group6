@@ -30,13 +30,13 @@ diytheme <- theme(plot.title=element_text(face="bold.italic",
 #define functions
 
 calculateMeanVarPlot <- function(dataset) {
-  # 假设输入的数据集中最后一列不需要
+
   da <- dataset[,-12] 
   
-  # 计算平均值
+
   mean_dish <- sum(da[,1]*da[,-1])/sum(da[,-1])
   
-  # 定义计算均值和标准差的函数
+
   mean_var <- function(f) {
     res <- c()
     for (i in 1:length(f)) {
@@ -47,16 +47,13 @@ calculateMeanVarPlot <- function(dataset) {
     return(c(mu, sd))
   }
   
-  # 应用mean_var函数到数据集的每一列
   results <- lapply(da[-1], mean_var) 
   results <- do.call(cbind, results)
-  
-  # 转换结果为数据框并设置列名
+
   results_df <- as.data.frame(t(results))
   names(results_df) <- c("mu", "sd")
   results_df$category <- rownames(results_df)
   
-  # 创建ggplot对象
   p <- ggplot(data = results_df, aes(x = category, y = mu, group = 1)) +
     geom_point(aes(colour = category, size = sd)) + 
     geom_line() +
@@ -124,12 +121,12 @@ createRadarChart <- function(dataset) {
 }
 
 generateBarPlot <- function(data, variable) {
-  # 将字符串变量转换为符号
+  
   variable_sym <- rlang::sym(variable)
   
   plot_data1 <- data[data$RestaurantsPriceRange2%in% c(1,2),]
   plot_data2 <- data[data$RestaurantsPriceRange2%in% c(3,4),]
-  # 使用符号进行分组和汇总
+ 
   
   
   plot_data1 <- plot_data1 %>%
@@ -137,10 +134,7 @@ generateBarPlot <- function(data, variable) {
     filter((!!variable_sym != "") & (!is.na(!!variable_sym)) & (!!variable_sym != "None")) %>%
     summarise(avg_star = mean(star, na.rm = TRUE), .groups = "drop")
   
-  # 打印 plot_data 来调试
-  
-  
-  # 创建条形图
+
   plot1 <- ggplot(plot_data1, aes_string(x = variable, y = "avg_star")) +
     geom_col(fill = "tan1", color = "black", alpha = 0.9) +
     geom_text(aes(label = sprintf("%.2f", avg_star)), vjust = -0.5, size = 5) +
@@ -148,14 +142,14 @@ generateBarPlot <- function(data, variable) {
     ggtitle("Low Price") +
     diytheme
   
-  # 使用符号进行分组和汇总
+
   plot_data2 <- plot_data2 %>%
     group_by(!!variable_sym) %>%
     filter((!!variable_sym != "") & (!is.na(!!variable_sym)) & (!!variable_sym != "None")) %>%
     summarise(avg_star = mean(star, na.rm = TRUE), .groups = "drop")
   
   
-  # 创建条形图
+
   plot2 <- ggplot(plot_data2, aes_string(x = variable, y = "avg_star")) +
     geom_col(fill = "purple", color = "black", alpha = 0.9) +
     geom_text(aes(label = sprintf("%.2f", avg_star)), vjust = -0.5, size = 5) +
@@ -168,7 +162,7 @@ generateBarPlot <- function(data, variable) {
   return(plot)
 }
 
-#定义UI
+
 #--------------
 
 ui <- dashboardPage(
@@ -187,12 +181,15 @@ ui <- dashboardPage(
     tabItems(
       tabItem(tabName = "home",
               h2("Introduction"),
-              p("The app uses Yelp data to analyze Italian restaurants in Philadelphia, and restaurant operators can use the app to seek recommendations to improve their restaurant performance."),
-              p("Contact information:"),
-              p("Please reach out to any of our group members if there is any question:"),
-              p("Baiheng Chen: bchen342@wisc.edu"),
-              p("Ruizhen Jing: rjing5@wisc.edu"),
-              p("Ziang Zeng: zeng86@wisc.edu")
+              img(src = "https://raw.githubusercontent.com/RZJing5/STAT628-Module3-Group6/main/images/cover.jpg", 
+                  alt = "Contact Information", height = "680px", width = "auto"),
+              
+              # p("The app uses Yelp data to analyze Italian restaurants in Philadelphia, and restaurant operators can use the app to seek recommendations to improve their restaurant performance."),
+              # p("Contact information:"),
+              # p("Please reach out to any of our group members if there is any question:"),
+              # p("Baiheng Chen: bchen342@wisc.edu"),
+              # p("Ruizhen Jing: rjing5@wisc.edu"),
+              # p("Ziang Zeng: zeng86@wisc.edu")
       ),
       tabItem(
         tabName = "map",
@@ -200,12 +197,12 @@ ui <- dashboardPage(
         fluidRow(
           column(6, leafletOutput("map")),
           #column(6, verbatimTextOutput("restaurantInfo")),
-          column(6, DTOutput("restaurantTable"))# 显示餐厅信息的位置
+          column(6, DTOutput("restaurantTable"))
         )
       ),
       tabItem(tabName = "barPlot",
               h2("Bar Plot"),
-              selectInput("barPlotVariable", "Select Variable", choices = c("OutdoorSeating", "WiFi", "RestaurantsAttire","Alcohol","NoiseLevel","RestaurantsDelivery","GoodForKids"), selected = "OutdoorSeating"),
+              selectInput("barPlotVariable", "Select Variable", choices = c("OutdoorSeating", "WiFi", "RestaurantsAttire","Alcohol","NoiseLevel","RestaurantsDelivery","GoodForKids","Smoking"), selected = "OutdoorSeating"),
               plotOutput("barPlot"),
               fluidRow(
                 column(12, verbatimTextOutput("selectedDescription"), style = "height: 1200px; overflow-y: auto;")
@@ -275,7 +272,7 @@ ui <- dashboardPage(
   )
 )
 
-# 定义服务器逻辑
+
 #----------------------
 
 server <- function(input, output, session) {
@@ -302,13 +299,13 @@ server <- function(input, output, session) {
   
   
   #print(head(joined_data()))
-  # 生成雷达图输出
+  
   output$radarChart <- renderPlot({
     data <- req(selectedDataForRadar())
     createRadarChart(data)
   })
   
-  # 生成均值和标准差图输出
+  
   output$meanVarPlot <- renderPlot({
     data <- req(selectedDataForMeanVar())
     calculateMeanVarPlot(data)
@@ -332,7 +329,7 @@ server <- function(input, output, session) {
     temp_zip <- tempfile(fileext = ".zip")
     download.file(url, temp_zip)
     
-    # 解压缩到指定目录
+    
     unzip(temp_zip, exdir = local_dir)
     st_read(paste(local_dir,"/PhillyStreets_Zipcodes_Poly.shp",sep="")) %>% st_transform(4326)
   })
@@ -367,55 +364,17 @@ server <- function(input, output, session) {
           animateAddingMarkers = TRUE
         ),
         #
-        color = "#800080", # 紫色
-        fillOpacity = 0.5, # 半透明
-        radius = 6 # 圆形大小
+        color = "#800080", 
+        fillOpacity = 0.5, 
+        radius = 6 
       )
   })
   
-  
-  # 在 observeEvent 中处理点击 Zipcode 区域事件
-  # 在 server 函数中添加一个观察者来处理地图点击事件
-  # 继续在 observeEvent 中添加代码来更新地图上的餐厅位置
-  # observeEvent(input$map_shape_click, {
-  #   click <- input$map_shape_click
-  #   print(click)
-  #   if (!is.null(click$properties$ZIPCODE)) {
-  #     selected_zipcode <- click$properties$ZIPCODE
-  #     
-  #     # 筛选出该 Zipcode 下的意大利餐厅
-  #     restaurants_in_zipcode <- italian_restaurants[italian_restaurants$zipcode == selected_zipcode, ]
-  #     print(restaurants_in_zipcode)
-  #     # 在地图上添加紫色半透明点
-  #     leafletProxy("map") %>%
-  #       clearMarkers() %>% # 清除之前的标记
-  #       addCircleMarkers(data = restaurants_in_zipcode, 
-  #                        lng = ~longitude, lat = ~latitude,
-  #                        id = ~X, popup = ~paste("Name: ", name, "<br>Stars: ", stars),
-  #                        
-  #                        color = "#800080", # 紫色
-  #                        fillOpacity = 0.5, radius = 6)
-  #     
-  #   }
-  #   
-  #   
-  # })
-  # 
-  # observeEvent(input$map_marker_click, {
-  #   click_marker <- input$map_marker_click
-  #   #print(click_marker)
-  #   if (!is.null(click_marker$id)) {
-  #     selected_restaurant <- italian_restaurants() %>%
-  #       filter(name == click_marker$id)
-  #     selected_restaurant_data(selected_restaurant)
-  #     print(selected_restaurant)
-  #   }
-  # })
-  
+
   observeEvent(input$map_marker_click, {
     click_info <- input$map_marker_click
     if (!is.null(click_info)) {
-      # 根据经纬度在数据集中查找餐馆
+
       selected_restaurant <- italian_restaurants() %>%
         filter(latitude == click_info$lat, longitude == click_info$lng)
       selected_restaurant_data(selected_restaurant)
@@ -425,12 +384,12 @@ server <- function(input, output, session) {
   output$restaurantTable <- renderDataTable({
     selected_data <- selected_restaurant_data()
     
-    # 确保 selected_data 不是 NULL 或空
+
     if (is.null(selected_data) || nrow(selected_data) == 0) {
       return(NULL)
     }
     
-    # 使用 DT::datatable() 直接显示数据表
+
     datatable(t(selected_data), options = list(
       pageLength = 10,
       autoWidth = TRUE
@@ -453,7 +412,8 @@ server <- function(input, output, session) {
       Alcohol = "restaurant has full bar lower mean stars than others",
       NoiseLevel = "There is no 'very loud' high price restaurant, \n if you has a low price italian restaurant, avoid being too loud",
       RestaurantsDelivery = "Significant difference in Delivery \n are seen in High price restaurant",
-      GoodForKids = "Tests shows no significant difference in \n star rating whether they are good for kids or not"
+      GoodForKids = "Tests shows no significant difference in \n star rating whether they are good for kids or not",
+      Smoking = "No high price allow costumer to smoking inside,\n which may provide better enviroment"
     )
     
     selected_variable <- input$barPlotVariable
@@ -463,7 +423,7 @@ server <- function(input, output, session) {
   })
 }
 
-# 运行应用
+
 shinyApp(ui, server)
 
 
